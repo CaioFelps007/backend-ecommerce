@@ -9,6 +9,28 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "mysql"
+  url      =  "mysql://root:@localhost:4306/produtos"
+}
+
+model User {
+  id Int @id @default(autoincrement())
+  name String
+  email String @unique
+}
+
+
+model Product {
+  id      Int     @id @default(autoincrement())
+  name    String
+  price   Float
+  photo   String
+  reviews Review[]
+}
+
+model Review {
+  id        Int     @id @default(autoincrement())
+  rating    Int     @default(0) // De 1 a 5 estrelas
+  productId Int
+  product   Product @relation(fields: [productId], references: [id])
 }
