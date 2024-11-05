@@ -10,11 +10,11 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url      =  "mysql://root:@localhost:4306/produtos"
+  url      =  "mysql://root:@localhost:3307/produtos"
 }
 
 model User {
-  id Int @id @default(autoincrement())
+  id String @id @default(uuid())
   name String
   email String @unique
 }
