@@ -1,8 +1,23 @@
 const express = require("express");
 const { PrismaClient } = require("@prisma/client");
+const multer = require("multer");
+const path = require("path");
 const prisma = new PrismaClient();
 
 const router = express.Router();
+
+// Configuração do Multer para armazenar imagens no diretório 'uploads'
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/"); // Pasta onde as imagens serão armazenadas
+  },
+  filename: (req, file, cb) => {
+    const fileName = Date.now() + path.extname(file.originalname);
+    cb(null, fileName); // Nome do arquivo será o timestamp para evitar sobreposição
+  },
+});
+
+const upload = multer({ storage: storage });
 
 // Rota para listar todos os produtos com avaliações
 router.get("/products", async (req, res) => {
@@ -42,16 +57,25 @@ router.get("/product/:id", async (req, res) => {
   }
 });
 
-// Rota para criar um novo produto
-router.post("/product", async (req, res) => {
-  const { name, price, photo } = req.body;
+// Rota para criar um novo produto (com upload de múltiplas imagens)
+router.post("/product", upload.array("photos", 10), async (req, res) => {
+  const { name, price } = req.body;
+
+  // Verifica se foram enviadas imagens
+  if (!req.files || req.files.length === 0) {
+    return res.status(400).json({ error: "Nenhuma imagem enviada" });
+  }
+
+  // Obter os caminhos das imagens
+  const imagePaths = req.files.map((file) => `/uploads/${file.filename}`); // Caminho das imagens no servidor
 
   try {
     const newProduct = await prisma.product.create({
       data: {
         name,
         price,
-        photo,
+        photo: imagePaths[0], // Usar a primeira imagem como 'photo' principal (opcional)
+        imagePaths, // Armazenar todas as imagens no campo `imagePaths`
       },
     });
     res.status(201).json(newProduct); // Retorna o produto criado
@@ -61,10 +85,16 @@ router.post("/product", async (req, res) => {
   }
 });
 
-// Rota para atualizar um produto existente
-router.put("/product/:id", async (req, res) => {
+// Rota para atualizar um produto existente (com upload de múltiplas imagens)
+router.put("/product/:id", upload.array("photos", 10), async (req, res) => {
   const { id } = req.params;
-  const { name, price, photo } = req.body;
+  const { name, price } = req.body;
+
+  // Verifica se foram enviadas imagens
+  let imagePaths = [];
+  if (req.files && req.files.length > 0) {
+    imagePaths = req.files.map((file) => `/uploads/${file.filename}`); // Caminho das imagens no servidor
+  }
 
   try {
     const updatedProduct = await prisma.product.update({
@@ -72,7 +102,8 @@ router.put("/product/:id", async (req, res) => {
       data: {
         name,
         price,
-        photo,
+        photo: imagePaths.length > 0 ? imagePaths[0] : undefined, // Atualiza a 'photo' se houver novas imagens
+        imagePaths: imagePaths.length > 0 ? imagePaths : undefined, // Atualiza o campo `imagePaths` com as novas imagens
       },
     });
     res.status(200).json(updatedProduct); // Retorna o produto atualizado

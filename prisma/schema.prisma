@@ -1,32 +1,26 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "mysql"
-  url      =  "mysql://root:@localhost:3307/produtos"
+  url      = "mysql://root:@localhost:4306/produtos"
 }
 
 model User {
-  id String @id @default(uuid())
-  name String
+  id    String @id @default(uuid())
+  name  String
   email String @unique
 }
-
 
 model Product {
   id      Int     @id @default(autoincrement())
   name    String
   price   Float
-  photo   String
+  photo   Json
   reviews Review[]
 }
+
 
 model Review {
   id        Int     @id @default(autoincrement())
